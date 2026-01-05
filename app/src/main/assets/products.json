@@ -1,0 +1,47 @@
+[
+  {
+    "id": 1,
+    "name": "Витамин D3 2000 МЕ",
+    "description": "Для поддержки иммунитета и здоровья костей. 60 капсул.",
+    "category": "Витамины",
+    "price": 8.50,
+    "imageUrl": "https://via.placeholder.com/150/FFC107/000000?text=VitD3",
+    "isFavorite": false
+  },
+  {
+    "id": 2,
+    "name": "Парацетамол 500 мг",
+    "description": "Жаропонижающее и обезболивающее средство. 20 таблеток.",
+    "category": "Боль и температура",
+    "price": 2.30,
+    "imageUrl": "https://via.placeholder.com/150/F44336/FFFFFF?text=Paracetamol",
+    "isFavorite": false
+  },
+  {
+    "id": 3,
+    "name": "Увлажняющий крем",
+    "description": "Для сухой и чувствительной кожи. 50 мл.",
+    "category": "Уход за кожей",
+    "price": 15.00,
+    "imageUrl": "https://via.placeholder.com/150/2196F3/FFFFFF?text=Cream",
+    "isFavorite": false
+  },
+  {
+    "id": 4,
+    "name": "Аспирин Кардио 100 мг",
+    "description": "Профилактика тромбозов. 28 таблеток.",
+    "category": "Сердечно-сосудистые",
+    "price": 5.20,
+    "imageUrl": "https://via.placeholder.com/150/E91E63/FFFFFF?text=Aspirin",
+    "isFavorite": true
+  },
+  {
+    "id": 5,
+    "name": "Спрей для носа (Ксилометазолин)",
+    "description": "Сосудосуживающее средство при насморке. 10 мл.",
+    "category": "Простуда и грипп",
+    "price": 4.80,
+    "imageUrl": "https://via.placeholder.com/150/4CAF50/FFFFFF?text=NoseSpray",
+    "isFavorite": false
+  }
+]
