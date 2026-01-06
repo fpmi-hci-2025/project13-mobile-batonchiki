@@ -10,7 +10,6 @@ import com.example.pharmacyapp.ui.screens.catalog.CatalogUiState
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
-import retrofit2.HttpException
 import java.io.IOException
 
 @OptIn(FlowPreview::class)
@@ -19,14 +18,16 @@ class CatalogViewModel(
     private val savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(CatalogUiState(isLoading = true))
+    private val _uiState = MutableStateFlow(
+        CatalogUiState(isLoading = true)
+    )
     val uiState: StateFlow<CatalogUiState> = _uiState.asStateFlow()
 
     private val _searchQuery = MutableStateFlow(
-        savedStateHandle.get<String>(AppScreens.Catalog.ARG_SEARCH_QUERY) ?: ""
+        savedStateHandle.get<String>(AppScreens.Catalog.ARG_SEARCH_QUERY)?.trim() ?: ""
     )
 
-    private val _toastMessage = MutableSharedFlow<String>()
+    private val _toastMessage = MutableSharedFlow<String>(extraBufferCapacity = 1)
     val toastMessage: SharedFlow<String> = _toastMessage.asSharedFlow()
 
     init {
@@ -35,15 +36,14 @@ class CatalogViewModel(
         val initialQueryFromNav = savedStateHandle.get<String>(AppScreens.Catalog.ARG_SEARCH_QUERY)
         if (!initialQueryFromNav.isNullOrBlank()) {
             _uiState.update { it.copy(searchQuery = initialQueryFromNav) }
+            _searchQuery.value = initialQueryFromNav
             Log.d("CatalogViewModel", "Initial search query from navigation: '$initialQueryFromNav'")
         }
-
 
         refreshDataInBackground()
 
         observeProducts()
     }
-
 
     fun forceRefreshData() {
         refreshDataInBackground()
@@ -51,21 +51,17 @@ class CatalogViewModel(
 
     private fun refreshDataInBackground() {
         viewModelScope.launch {
-            Log.d("CatalogViewModel", "Attempting to refresh products from network...")
+            Log.d("CatalogViewModel", "Refreshing products from network...")
             try {
                 repository.refreshProducts()
-                Log.d("CatalogViewModel", "Network refreshProducts successful")
+                Log.d("CatalogViewModel", "refreshProducts() OK")
             } catch (e: IOException) {
-                Log.e("CatalogViewModel", "Network error during refreshData", e)
-                _toastMessage.emit("Ошибка сети при обновлении.")
-            } catch (e: HttpException) {
-                Log.e("CatalogViewModel", "HTTP error during refreshData: ${e.code()}", e)
-                _toastMessage.emit("Ошибка загрузки данных (${e.code()}).")
+                Log.e("CatalogViewModel", "Network/IO error during refresh", e)
+                _toastMessage.tryEmit("Ошибка сети при обновлении.")
             } catch (e: Exception) {
-                Log.e("CatalogViewModel", "Generic error during refreshData", e)
-                _toastMessage.emit("Произошла ошибка обновления.")
+                Log.e("CatalogViewModel", "Generic error during refresh", e)
+                _toastMessage.tryEmit("Произошла ошибка обновления.")
             }
-
         }
     }
 
@@ -73,15 +69,22 @@ class CatalogViewModel(
         viewModelScope.launch {
             _searchQuery
                 .debounce(300L)
+                .map { it.trim() }
                 .distinctUntilChanged()
                 .flatMapLatest { query ->
                     Log.d("CatalogViewModel", "Observing products for query: '$query'")
-                    _uiState.update { it.copy(isLoading = true, error = null, noResultsFound = false) } // Показываем загрузку перед новым запросом
-                    if (query.isBlank()) {
-                        repository.getAllProducts()
-                    } else {
-                        repository.searchProducts(query)
+
+                    _uiState.update {
+                        it.copy(
+                            isLoading = true,
+                            error = null,
+                            noResultsFound = false,
+                            searchQuery = query
+                        )
                     }
+
+                    if (query.isBlank()) repository.getAllProducts()
+                    else repository.searchProducts(query)
                 }
                 .catch { exception ->
                     Log.e("CatalogViewModel", "Error observing database", exception)
@@ -93,15 +96,17 @@ class CatalogViewModel(
                             noResultsFound = false
                         )
                     }
-                    _toastMessage.emit("Ошибка при чтении локальных данных.")
+                    _toastMessage.tryEmit("Ошибка при чтении локальных данных.")
                 }
                 .collect { products ->
-                    Log.d("CatalogViewModel", "Collected ${products.size} products. Query: '${_searchQuery.value}'")
-                    _uiState.update { currentState ->
-                        currentState.copy(
+                    val q = _searchQuery.value.trim()
+                    Log.d("CatalogViewModel", "Collected ${products.size} products. Query: '$q'")
+
+                    _uiState.update { current ->
+                        current.copy(
                             products = products,
                             isLoading = false,
-                            noResultsFound = products.isEmpty() && _searchQuery.value.isNotBlank(),
+                            noResultsFound = products.isEmpty() && q.isNotBlank(),
                             error = null
                         )
                     }
@@ -114,13 +119,13 @@ class CatalogViewModel(
         _uiState.update { it.copy(searchQuery = query) }
     }
 
-    fun toggleFavoriteStatus(productId: Long, isFavorite: Boolean) {
+    fun toggleFavoriteStatus(productId: String, isFavorite: Boolean) {
         viewModelScope.launch {
             try {
                 repository.updateFavoriteStatus(productId, !isFavorite)
             } catch (e: Exception) {
                 Log.e("CatalogViewModel", "Error toggling favorite status", e)
-                _toastMessage.emit("Не удалось изменить статус избранного.")
+                _toastMessage.tryEmit("Не удалось изменить статус избранного.")
             }
         }
     }

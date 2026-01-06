@@ -17,20 +17,19 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.example.pharmacyapp.PharmacyApplication
+import com.example.pharmacyapp.ui.AppScreens
 import com.example.pharmacyapp.ui.screens.catalog.ProductItem
 import com.example.pharmacyapp.ui.viewmodel.FavoritesViewModel
 import com.example.pharmacyapp.ui.viewmodel.FavoritesViewModelFactory
-import com.example.pharmacyapp.ui.AppScreens
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FavoritesScreen(
     navController: NavHostController,
-)
-{
+) {
     val application = LocalContext.current.applicationContext as PharmacyApplication
     val viewModel: FavoritesViewModel = viewModel(
-        factory = FavoritesViewModelFactory(application.productRepository) // Используем нашу фабрику
+        factory = FavoritesViewModelFactory(application.productRepository)
     )
 
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -40,7 +39,7 @@ fun FavoritesScreen(
             TopAppBar(
                 title = { Text("Избранное") },
                 navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) { // Кнопка "назад"
+                    IconButton(onClick = { navController.popBackStack() }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Назад")
                     }
                 }
@@ -50,15 +49,25 @@ fun FavoritesScreen(
 
         when {
             uiState.isLoading -> {
-                Box(Modifier.fillMaxSize().padding(paddingValues), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator()
-                }
+                Box(
+                    Modifier
+                        .fillMaxSize()
+                        .padding(paddingValues),
+                    contentAlignment = Alignment.Center
+                ) { CircularProgressIndicator() }
             }
+
             uiState.favoriteProducts.isEmpty() -> {
-                Box(Modifier.fillMaxSize().padding(paddingValues), contentAlignment = Alignment.Center) {
+                Box(
+                    Modifier
+                        .fillMaxSize()
+                        .padding(paddingValues),
+                    contentAlignment = Alignment.Center
+                ) {
                     Text("Нет избранных товаров", textAlign = TextAlign.Center)
                 }
             }
+
             else -> {
                 LazyColumn(
                     modifier = Modifier
@@ -72,7 +81,6 @@ fun FavoritesScreen(
                         ProductItem(
                             product = product,
                             onFavoriteClick = {
-
                                 viewModel.toggleFavoriteStatus(product.id, product.isFavorite)
                             },
                             onItemClick = {

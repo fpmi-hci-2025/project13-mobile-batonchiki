@@ -13,16 +13,18 @@ interface ProductDao {
     fun getFavoriteProducts(): Flow<List<ProductEntity>>
 
     @Query("SELECT * FROM products WHERE id = :productId")
-    fun getProductById(productId: Long): Flow<ProductEntity?>
+    fun getProductById(productId: String): Flow<ProductEntity?>
 
-    @Query("SELECT * FROM products WHERE name LIKE '%' || :query || '%' OR description LIKE '%' || :query || '%' ORDER BY name ASC")
+    @Query("""
+        SELECT * FROM products 
+        WHERE name LIKE '%' || :query || '%' OR description LIKE '%' || :query || '%' 
+        ORDER BY name ASC
+    """)
     fun searchProducts(query: String): Flow<List<ProductEntity>>
 
     @Query("UPDATE products SET isFavorite = :isFavorite WHERE id = :productId")
-    suspend fun updateFavoriteStatus(productId: Long, isFavorite: Boolean)
+    suspend fun updateFavoriteStatus(productId: String, isFavorite: Boolean)
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAll(products: List<ProductEntity>)
-
-
 }

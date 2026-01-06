@@ -11,7 +11,6 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextOverflow
@@ -33,7 +32,7 @@ data class PromotionItemData(
     val imageUrl: String
 )
 
-val sampleSymptoms = listOf(
+private val sampleSymptoms = listOf(
     "Головная боль", "Боль в желудке", "Насморк", "Кашель",
     "Боль в горле", "Спазм", "Аллергия", "Бессонница"
 )
@@ -46,24 +45,21 @@ fun HomeScreen(navController: NavHostController) {
             id = "promo1",
             title = "Весенние скидки на витамины!",
             description = "Скидка 20% на все витамины группы B и C.",
-            imageUrl = "https://superapteka.ru/promos/storage/34892/01JJVPRVCRFNAB4SKJKBPJQ0VQ.jpg" // Замените
+            imageUrl = "https://superapteka.ru/promos/storage/34892/01JJVPRVCRFNAB4SKJKBPJQ0VQ.jpg"
         ),
         PromotionItemData(
             id = "promo2",
             title = "Бесплатная доставка от 1000 рублей",
             description = "Заказ от 1000 рублей доставим бесплатно.",
-            imageUrl = "https://img.freepik.com/free-vector/humanitarian-help-concept_52683-36821.jpg?semt=ais_hybrid&w=740" // Замените
+            imageUrl = "https://img.freepik.com/free-vector/humanitarian-help-concept_52683-36821.jpg?semt=ais_hybrid&w=740"
         )
     )
 
     Scaffold(
-        topBar = {
-            TopAppBar(title = { Text("Главная") })
-        },
-        bottomBar = {
-            AppBottomNavigationBar(navController = navController)
-        }
+        topBar = { TopAppBar(title = { Text("Главная") }) },
+        bottomBar = { AppBottomNavigationBar(navController = navController) }
     ) { innerPadding ->
+
         LazyColumn(
             modifier = Modifier
                 .padding(innerPadding)
@@ -79,16 +75,14 @@ fun HomeScreen(navController: NavHostController) {
                     modifier = Modifier.padding(top = 16.dp, bottom = 8.dp)
                 )
             }
+
             item {
                 LazyRow(
                     horizontalArrangement = Arrangement.spacedBy(16.dp),
                     contentPadding = PaddingValues(vertical = 8.dp)
                 ) {
                     items(samplePromotions) { promotion ->
-                        PromotionCard(
-                            promotion = promotion,
-                            modifier = Modifier.width(300.dp)
-                        )
+                        PromotionCard(promotion = promotion, modifier = Modifier.width(300.dp))
                     }
                 }
             }
@@ -100,6 +94,7 @@ fun HomeScreen(navController: NavHostController) {
                     modifier = Modifier.padding(top = 24.dp, bottom = 8.dp)
                 )
             }
+
             item {
                 LazyRow(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -109,27 +104,22 @@ fun HomeScreen(navController: NavHostController) {
                         SymptomButton(
                             symptomName = symptom,
                             onClick = {
-                                val searchQuery = symptom
-                                Log.d("HomeScreen", "Navigating to Catalog with search: $searchQuery")
-                                navController.navigate(AppScreens.Catalog.createRoute(searchQuery = searchQuery))
+                                Log.d("HomeScreen", "Navigating to Catalog with search: $symptom")
+                                navController.navigate(AppScreens.Catalog.createRoute(searchQuery = symptom))
                             }
                         )
                     }
                 }
             }
-            item {
-                Spacer(modifier = Modifier.height(16.dp))
-            }
+
+            item { Spacer(modifier = Modifier.height(16.dp)) }
         }
     }
 }
 
 @Composable
 fun PromotionCard(promotion: PromotionItemData, modifier: Modifier = Modifier) {
-    Card(
-        modifier = modifier,
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
-    ) {
+    Card(modifier = modifier, elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)) {
         Column {
             AsyncImage(
                 model = promotion.imageUrl,
@@ -172,11 +162,9 @@ fun SymptomButton(
     }
 }
 
-
 @Composable
 fun AppBottomNavigationBar(navController: NavHostController) {
     val items = listOf(
-
         BottomNavigationItemData(AppScreens.Favorites.route, "Избранное", Icons.Filled.FavoriteBorder),
         BottomNavigationItemData(AppScreens.Catalog.createRoute(), "Поиск", Icons.Filled.Search)
     )
@@ -196,9 +184,7 @@ fun AppBottomNavigationBar(navController: NavHostController) {
                 } == true,
                 onClick = {
                     navController.navigate(screen.route) {
-                        popUpTo(navController.graph.findStartDestination().id) {
-                            saveState = true
-                        }
+                        popUpTo(navController.graph.findStartDestination().id) { saveState = true }
                         launchSingleTop = true
                         restoreState = true
                     }

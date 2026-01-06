@@ -17,28 +17,24 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.ViewModelProvider.AndroidViewModelFactory.Companion.APPLICATION_KEY
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.createSavedStateHandle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
+import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
 import com.example.pharmacyapp.PharmacyApplication
 import com.example.pharmacyapp.ui.viewmodel.ProductDetailsViewModel
-import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.lifecycle.ViewModelProvider.AndroidViewModelFactory.Companion.APPLICATION_KEY
-import androidx.lifecycle.createSavedStateHandle
-import androidx.lifecycle.viewmodel.initializer
-import androidx.lifecycle.viewmodel.viewModelFactory
-
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProductDetailsScreen(
-    navController: androidx.navigation.NavHostController
-
+    navController: NavHostController
 ) {
-
     val application = LocalContext.current.applicationContext as PharmacyApplication
+
     val viewModel: ProductDetailsViewModel = viewModel(
         factory = viewModelFactory {
             initializer {
@@ -77,21 +73,33 @@ fun ProductDetailsScreen(
         }
     ) { paddingValues ->
 
-
         when {
             uiState.isLoading -> {
-                Box(Modifier.fillMaxSize().padding(paddingValues), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator()
-                }
+                Box(
+                    Modifier
+                        .fillMaxSize()
+                        .padding(paddingValues),
+                    contentAlignment = Alignment.Center
+                ) { CircularProgressIndicator() }
             }
-            uiState.error != null -> {
-                Box(Modifier.fillMaxSize().padding(paddingValues), contentAlignment = Alignment.Center) {
-                    Text(uiState.error ?: "Произошла ошибка", textAlign = TextAlign.Center)
-                }
-            }
-            uiState.product != null -> {
 
+            uiState.error != null -> {
+                Box(
+                    Modifier
+                        .fillMaxSize()
+                        .padding(paddingValues),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        uiState.error ?: "Произошла ошибка",
+                        textAlign = TextAlign.Center
+                    )
+                }
+            }
+
+            uiState.product != null -> {
                 val product = uiState.product!!
+
                 Column(
                     modifier = Modifier
                         .padding(paddingValues)
@@ -109,36 +117,37 @@ fun ProductDetailsScreen(
                             .clip(MaterialTheme.shapes.large),
                         contentScale = ContentScale.Crop
                     )
-                    Spacer(modifier = Modifier.height(16.dp))
 
+                    Spacer(modifier = Modifier.height(16.dp))
 
                     Text(
                         text = product.name,
                         style = MaterialTheme.typography.headlineMedium
                     )
-                    Spacer(modifier = Modifier.height(8.dp))
 
+                    Spacer(modifier = Modifier.height(8.dp))
 
                     Text(
                         text = "Цена: ${product.price} у.е.",
                         style = MaterialTheme.typography.titleLarge,
                         color = MaterialTheme.colorScheme.primary
                     )
-                    Spacer(modifier = Modifier.height(8.dp))
 
+                    Spacer(modifier = Modifier.height(8.dp))
 
                     Text(
                         text = "Категория: ${product.category}",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
-                    Spacer(modifier = Modifier.height(16.dp))
 
+                    Spacer(modifier = Modifier.height(16.dp))
 
                     Text(
                         text = product.description,
                         style = MaterialTheme.typography.bodyLarge
                     )
+
                     Spacer(modifier = Modifier.height(16.dp))
                 }
             }

@@ -13,33 +13,24 @@ class ProductDetailsViewModel(
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
-
-    private val productId: Long = checkNotNull(savedStateHandle["productId"])
+    private val productId: String = checkNotNull(savedStateHandle["productId"]) // Long -> String
 
     private val _uiState = MutableStateFlow(ProductDetailsUiState())
     val uiState: StateFlow<ProductDetailsUiState> = _uiState.asStateFlow()
 
-    init {
-        loadProductDetails()
-    }
+    init { loadProductDetails() }
 
     private fun loadProductDetails() {
         viewModelScope.launch {
             repository.getProductById(productId)
                 .catch { exception ->
-                    _uiState.update {
-                        it.copy(isLoading = false, error = "Ошибка загрузки: ${exception.message}")
-                    }
+                    _uiState.update { it.copy(isLoading = false, error = "Ошибка загрузки: ${exception.message}") }
                 }
                 .collect { product ->
                     if (product != null) {
-                        _uiState.update {
-                            it.copy(isLoading = false, product = product, error = null)
-                        }
+                        _uiState.update { it.copy(isLoading = false, product = product, error = null) }
                     } else {
-                        _uiState.update {
-                            it.copy(isLoading = false, error = "Продукт с ID $productId не найден.")
-                        }
+                        _uiState.update { it.copy(isLoading = false, error = "Продукт с ID $productId не найден.") }
                     }
                 }
         }

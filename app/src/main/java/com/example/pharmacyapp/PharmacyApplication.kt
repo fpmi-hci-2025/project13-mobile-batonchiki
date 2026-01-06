@@ -14,28 +14,25 @@ import retrofit2.converter.gson.GsonConverterFactory
 
 class PharmacyApplication : Application() {
 
-
     private val database: AppDatabase by lazy {
         AppDatabase.getInstance(this)
     }
 
-
     private val apiService: ApiService by lazy {
-
         val logging = HttpLoggingInterceptor { message -> Log.d("OkHttp", message) }
         logging.setLevel(HttpLoggingInterceptor.Level.BODY)
+
         val httpClient = OkHttpClient.Builder()
             .addInterceptor(logging)
             .build()
 
         Retrofit.Builder()
-            .baseUrl("https://gist.githubusercontent.com/")
+            .baseUrl("https://pharmacy-api-k0ad.onrender.com/") // <-- ВАЖНО: твоя API
             .client(httpClient)
             .addConverterFactory(GsonConverterFactory.create())
             .build()
             .create(ApiService::class.java)
     }
-
 
     val productRepository: ProductRepository by lazy {
         ProductRepositoryImpl(

@@ -14,35 +14,35 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-
 import com.example.pharmacyapp.ui.screens.catalog.CatalogScreen
 import com.example.pharmacyapp.ui.screens.details.ProductDetailsScreen
 import com.example.pharmacyapp.ui.screens.favorites.FavoritesScreen
 import com.example.pharmacyapp.ui.screens.home.HomeScreen
-
-
 import com.example.pharmacyapp.ui.theme.PharmacyAppTheme
-
+import java.net.URLEncoder
+import java.nio.charset.StandardCharsets
 
 sealed class AppScreens(val route: String) {
     data object Home : AppScreens("home")
 
     data object Catalog : AppScreens("catalog?searchQuery={searchQuery}") {
+        const val ARG_SEARCH_QUERY = "searchQuery"
 
         fun createRoute(searchQuery: String? = null): String {
-            return if (searchQuery != null) {
-                "catalog?searchQuery=$searchQuery"
+            return if (!searchQuery.isNullOrBlank()) {
+                val encoded = URLEncoder.encode(searchQuery, StandardCharsets.UTF_8.toString())
+                "catalog?searchQuery=$encoded"
             } else {
                 "catalog"
             }
         }
-        const val ARG_SEARCH_QUERY = "searchQuery"
     }
 
     data object ProductDetails : AppScreens("product_details/{productId}") {
         const val ARG_PRODUCT_ID = "productId"
-        fun createRoute(productId: Long) = "product_details/$productId"
+        fun createRoute(productId: String) = "product_details/$productId"
     }
+
     data object Favorites : AppScreens("favorites")
 }
 
@@ -76,11 +76,13 @@ fun AppNavigation() {
 
         composable(
             route = AppScreens.Catalog.route,
-            arguments = listOf(navArgument(AppScreens.Catalog.ARG_SEARCH_QUERY) {
-                type = NavType.StringType
-                nullable = true
-                defaultValue = null
-            })
+            arguments = listOf(
+                navArgument(AppScreens.Catalog.ARG_SEARCH_QUERY) {
+                    type = NavType.StringType
+                    nullable = true
+                    defaultValue = null
+                }
+            )
         ) {
             CatalogScreen(
                 navController = navController,
@@ -92,9 +94,11 @@ fun AppNavigation() {
 
         composable(
             route = AppScreens.ProductDetails.route,
-            arguments = listOf(navArgument(AppScreens.ProductDetails.ARG_PRODUCT_ID) {
-                type = NavType.LongType
-            })
+            arguments = listOf(
+                navArgument(AppScreens.ProductDetails.ARG_PRODUCT_ID) {
+                    type = NavType.StringType
+                }
+            )
         ) {
             ProductDetailsScreen(navController = navController)
         }

@@ -6,8 +6,8 @@ import com.example.pharmacyapp.data.remote.ApiService
 import com.example.pharmacyapp.logger.Logger
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
-import retrofit2.HttpException
 import java.io.IOException
 
 class ProductRepositoryImpl(
@@ -16,30 +16,19 @@ class ProductRepositoryImpl(
     private val logger: Logger
 ) : ProductRepository {
 
-    private val productsJsonUrl = "https://gist.githubusercontent.com/RustambekTalipov/423e2d0ac9ade2f20c345eebe2862e00/raw/78fe5405a707c6531e59c2e37fe7230782f2ecce/pharmacy_products.json"
+    private val apiBaseUrl = "https://pharmacy-api-k0ad.onrender.com/"
 
-    override fun getAllProducts(): Flow<List<ProductEntity>> {
-        logger.debug("ProductRepositoryImpl1234", "Getting all products flow from DAO")
-        return productDao.getAllProducts()
-    }
+    override fun getAllProducts(): Flow<List<ProductEntity>> = productDao.getAllProducts()
 
-    override fun getFavoriteProducts(): Flow<List<ProductEntity>> {
-        logger.debug("ProductRepositoryImpl", "Getting favorite products flow from DAO")
-        return productDao.getFavoriteProducts()
-    }
+    override fun getFavoriteProducts(): Flow<List<ProductEntity>> = productDao.getFavoriteProducts()
 
-    override fun getProductById(productId: Long): Flow<ProductEntity?> {
-        logger.debug("ProductRepositoryImpl", "Getting product by ID $productId flow from DAO")
-        return productDao.getProductById(productId)
-    }
+    override fun getProductById(productId: String): Flow<ProductEntity?> =
+        productDao.getProductById(productId)
 
-    override fun searchProducts(query: String): Flow<List<ProductEntity>> {
-        logger.debug("ProductRepositoryImpl", "Searching products with query '$query' flow from DAO")
-        return productDao.searchProducts(query)
-    }
+    override fun searchProducts(query: String): Flow<List<ProductEntity>> =
+        productDao.searchProducts(query)
 
-    override suspend fun updateFavoriteStatus(productId: Long, isFavorite: Boolean) {
-        logger.debug("ProductRepositoryImpl", "Updating favorite status for $productId to $isFavorite")
+    override suspend fun updateFavoriteStatus(productId: String, isFavorite: Boolean) {
         withContext(Dispatchers.IO) {
             productDao.updateFavoriteStatus(productId, isFavorite)
         }
@@ -48,37 +37,34 @@ class ProductRepositoryImpl(
     override suspend fun refreshProducts() {
         withContext(Dispatchers.IO) {
             try {
-                logger.info("ProductRepositoryImpl", "Attempting to fetch products from: $productsJsonUrl")
+                logger.info("ProductRepositoryImpl", "Fetching items from API: ${apiBaseUrl}api/items")
 
-                val response = apiService.getProductsFromUrl(productsJsonUrl)
+                val current = productDao.getAllProducts().first()
+                val favoritesMap = current.associateBy({ it.id }, { it.isFavorite })
 
-                if (response.isSuccessful) {
-                    val productList = response.body()
-                    if (productList != null) {
-                        if (productList.isNotEmpty()) {
-                            productDao.insertAll(productList)
-                            logger.info("ProductRepositoryImpl", "Successfully fetched and saved ${productList.size} products to DB.")
+                val items = apiService.getItems()
+
+                val mapped = items.map { dto ->
+                    ProductEntity(
+                        id = dto.itemId,
+                        name = dto.name,
+                        description = dto.description ?: "",
+                        category = "Без категории",
+                        price = dto.price,
+                        imageUrl = if (dto.hasImage) {
+                            "${apiBaseUrl}api/items/${dto.itemId}/image"
                         } else {
-                            logger.warn("ProductRepositoryImpl", "Fetched product list is empty. No changes made to DB.")
-                        }
-                    } else {
-                        logger.warn("ProductRepositoryImpl", "Network request successful, but response body was null.")
-                        throw IOException("Received null response body")
-                    }
-                } else {
-                    val errorBody = response.errorBody()?.string() ?: "Unknown HTTP error"
-                    logger.error("ProductRepositoryImpl", "Network request failed with code ${response.code()}: $errorBody")
-                    throw HttpException(response)
+                            ""
+                        },
+                        isFavorite = favoritesMap[dto.itemId] ?: false
+                    )
                 }
-            } catch (e: IOException) {
-                logger.error("ProductRepositoryImpl", "Network IO error during product refresh", e)
-                throw e
-            } catch (e: HttpException) {
-                logger.error("ProductRepositoryImpl", "HTTP error during product refresh", e)
-                throw e
+
+                productDao.insertAll(mapped)
+                logger.info("ProductRepositoryImpl", "Saved ${mapped.size} items to DB")
             } catch (e: Exception) {
-                logger.error("ProductRepositoryImpl", "Generic error during product refresh", e)
-                throw e
+                logger.error("ProductRepositoryImpl", "Failed to refresh products", e)
+                throw IOException("Failed to refresh products: ${e.message}", e)
             }
         }
     }

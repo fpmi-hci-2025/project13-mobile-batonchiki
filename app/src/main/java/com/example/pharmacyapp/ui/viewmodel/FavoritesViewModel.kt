@@ -14,29 +14,21 @@ class FavoritesViewModel(
     private val _uiState = MutableStateFlow(FavoritesUiState())
     val uiState: StateFlow<FavoritesUiState> = _uiState.asStateFlow()
 
-    init {
-        observeFavoriteProducts()
-    }
+    init { observeFavoriteProducts() }
 
     private fun observeFavoriteProducts() {
         viewModelScope.launch {
             repository.getFavoriteProducts()
-                .catch { exception ->
-                    _uiState.update { it.copy(isLoading = false /*, error = ... */) }
-                    println("Error collecting favorites: ${exception.message}")
-                }
+                .catch { _uiState.update { it.copy(isLoading = false) } }
                 .collect { favorites ->
-                    _uiState.update {
-                        it.copy(isLoading = false, favoriteProducts = favorites)
-                    }
+                    _uiState.update { it.copy(isLoading = false, favoriteProducts = favorites) }
                 }
         }
     }
 
-
-    fun toggleFavoriteStatus(productId: Long, isFavorite: Boolean) {
+    fun toggleFavoriteStatus(productId: String, isFavorite: Boolean) {
         viewModelScope.launch {
-            repository.updateFavoriteStatus(productId, false)
+            repository.updateFavoriteStatus(productId, !isFavorite) // было всегда false
         }
     }
 }
