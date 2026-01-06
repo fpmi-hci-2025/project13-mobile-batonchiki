@@ -19,7 +19,7 @@ class CatalogScreenTest {
     fun searchBarFiltersProducts() {
         val testProducts = listOf(
             ProductEntity(
-                id = 1,
+                id = "1",
                 name = "Аспирин",
                 description = "Противовоспалительное средство",
                 category = "Лекарства",
@@ -28,7 +28,7 @@ class CatalogScreenTest {
                 isFavorite = false
             ),
             ProductEntity(
-                id = 2,
+                id = "2",
                 name = "Витамин C",
                 description = "Витамин",
                 category = "Витамины",
