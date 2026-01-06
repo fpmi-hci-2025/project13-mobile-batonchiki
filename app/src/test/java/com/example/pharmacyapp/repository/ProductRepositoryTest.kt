@@ -9,15 +9,10 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
-import okhttp3.MediaType.Companion.toMediaTypeOrNull
-import okhttp3.ResponseBody
-import org.junit.Assert.assertEquals
+import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Test
 import org.mockito.Mockito.*
-import retrofit2.HttpException
-import retrofit2.Response
-import java.io.IOException
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class ProductRepositoryTest {
@@ -36,86 +31,97 @@ class ProductRepositoryTest {
     }
 
     @Test
-    fun `getAllProducts returns data from DAO`() = runTest {
-        val expected = listOf(ProductEntity(1, "Test", "Desc", "Cat", 10.0, "img.jpg", false))
+    fun `getAllProducts delegates to DAO`() = runTest {
+        val expected = listOf(
+            ProductEntity(
+                id = "1",
+                name = "Aspirin",
+                description = "Pain reliever",
+                category = "Головная боль",
+                price = 5.99,
+                imageUrl = "",
+                isFavorite = false
+            )
+        )
         `when`(productDao.getAllProducts()).thenReturn(flowOf(expected))
 
-        val actual = repository.getAllProducts().first()
+        val result = repository.getAllProducts().first()
 
-        assertEquals(expected, actual)
+        assertEquals(expected, result)
+        verify(productDao, times(1)).getAllProducts()
+        verifyNoMoreInteractions(productDao)
     }
 
     @Test
-    fun `updateFavoriteStatus calls DAO method`() = runTest {
-        repository.updateFavoriteStatus(1L, true)
-
-        verify(productDao).updateFavoriteStatus(1L, true)
-    }
-
-    @Test
-    fun `getFavoriteProducts returns only favorites`() = runTest {
-        val favorites = listOf(ProductEntity(2, "Fav", "Desc", "Cat", 20.0, "fav.jpg", true))
+    fun `getFavoriteProducts delegates to DAO`() = runTest {
+        val favorites = listOf(
+            ProductEntity(
+                id = "2",
+                name = "Vitamin C",
+                description = "Vitamins",
+                category = "Витамины",
+                price = 2.5,
+                imageUrl = "",
+                isFavorite = true
+            )
+        )
         `when`(productDao.getFavoriteProducts()).thenReturn(flowOf(favorites))
 
-        val actual = repository.getFavoriteProducts().first()
+        val result = repository.getFavoriteProducts().first()
 
-        assertEquals(favorites, actual)
+        assertEquals(favorites, result)
+        verify(productDao, times(1)).getFavoriteProducts()
+        verifyNoMoreInteractions(productDao)
     }
 
     @Test
-    fun `getProductById returns correct product`() = runTest {
-        val product = ProductEntity(3, "One", "Desc", "Cat", 30.0, "one.jpg", false)
-        `when`(productDao.getProductById(3L)).thenReturn(flowOf(product))
+    fun `getProductById delegates to DAO`() = runTest {
+        val product = ProductEntity(
+            id = "3",
+            name = "Ibuprofen",
+            description = "Anti-inflammatory",
+            category = "Головная боль",
+            price = 7.0,
+            imageUrl = "",
+            isFavorite = false
+        )
+        `when`(productDao.getProductById("3")).thenReturn(flowOf(product))
 
-        val result = repository.getProductById(3L).first()
+        val result = repository.getProductById("3").first()
 
         assertEquals(product, result)
+        verify(productDao, times(1)).getProductById("3")
+        verifyNoMoreInteractions(productDao)
     }
 
     @Test
-    fun `searchProducts returns matching results`() = runTest {
-        val query = "aspirin"
-        val results = listOf(ProductEntity(4, "Aspirin", "Painkiller", "Health", 5.0, "a.jpg", false))
+    fun `searchProducts delegates to DAO`() = runTest {
+        val query = "асп"
+        val results = listOf(
+            ProductEntity(
+                id = "4",
+                name = "Аспирин",
+                description = "Описание",
+                category = "Головная боль",
+                price = 1.0,
+                imageUrl = "",
+                isFavorite = false
+            )
+        )
         `when`(productDao.searchProducts(query)).thenReturn(flowOf(results))
 
-        val actual = repository.searchProducts(query).first()
+        val result = repository.searchProducts(query).first()
 
-        assertEquals(results, actual)
+        assertEquals(results, result)
+        verify(productDao, times(1)).searchProducts(query)
+        verifyNoMoreInteractions(productDao)
     }
 
     @Test
-    fun `refreshProducts inserts data when response is successful`() = runTest {
-        val remoteProducts = listOf(ProductEntity(10, "API Product", "Fetched", "API", 99.9, "api.jpg", false))
-        `when`(apiService.getProductsFromUrl(anyString())).thenReturn(Response.success(remoteProducts))
+    fun `updateFavoriteStatus calls DAO with flipped value`() = runTest {
+        repository.updateFavoriteStatus("10", true)
 
-        repository.refreshProducts()
-
-        verify(productDao).insertAll(remoteProducts)
-    }
-
-    @Test
-    fun `refreshProducts skips insert when response is empty`() = runTest {
-        `when`(apiService.getProductsFromUrl(anyString())).thenReturn(Response.success(emptyList()))
-
-        repository.refreshProducts()
-
-        verify(productDao, never()).insertAll(anyList())
-    }
-
-    @Test(expected = IOException::class)
-    fun `refreshProducts throws IOException when response body is null`() = runTest {
-        `when`(apiService.getProductsFromUrl(anyString())).thenReturn(Response.success(null))
-
-        repository.refreshProducts()
-    }
-
-    @Test(expected = HttpException::class)
-    fun `refreshProducts throws HttpException when response is not successful`() = runTest {
-        val errorBody = ResponseBody.create("application/json".toMediaTypeOrNull(), "Not Found")
-        val errorResponse = Response.error<List<ProductEntity>>(404, errorBody)
-
-        `when`(apiService.getProductsFromUrl(anyString())).thenReturn(errorResponse)
-
-        repository.refreshProducts()
+        verify(productDao, times(1)).updateFavoriteStatus("10", true)
+        verifyNoMoreInteractions(productDao)
     }
 }
